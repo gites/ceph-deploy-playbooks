@@ -1,0 +1,20 @@
+---
+
+
+- hosts: ceph-cluster
+  roles:
+      - { role: ceph-deploy-common }
+
+- hosts: ceph-mon
+  roles:
+      - { role: ceph-deploy-mon }
+
+- hosts: ceph-osd
+  roles:
+      - { role: ceph-deploy-osd }
+
+- hosts: ceph-rgw
+  roles:
+      - { role: ceph-deploy-rgw }
+      - { role: ceph-swift }
+

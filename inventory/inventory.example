@@ -1,0 +1,22 @@
+ceph1 ansible_ssh_host=10.91.84.26 ansible_ssh_user=ubuntu
+ceph2 ansible_ssh_host=10.91.84.24 ansible_ssh_user=ubuntu
+ceph3 ansible_ssh_host=10.91.84.25 ansible_ssh_user=ubuntu
+
+[ceph-mon]
+ceph1
+ceph2
+ceph3
+
+[ceph-rgw]
+ceph1
+ceph2
+ceph3
+
+[ceph-osd]
+ceph1
+ceph2
+
+[ceph-cluster:children]
+ceph-mon
+ceph-rgw
+ceph-osd

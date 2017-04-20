@@ -1,0 +1,30 @@
+---
+# defaults file for ceph-deploy-osd
+
+# ceph_cluster_dir define directory on your ceph-mon[0] node for maintaining
+# the configuration files and keys that ceph-deploy generates for your cluster.
+ceph_cluster_dir: /root/ceph_cluster
+
+# osd_drives defines drives that will be used for OSD
+# if have diferent deveices on diferent osd hosts 
+# use host vars to override
+osd_drives:
+  - vdb
+  - vdc
+
+# zap - shoudl ceph-deploy destroy existing partition table and content for DISK
+# ansible will fail if there are signis of data on disks from osd_drives list
+# values:
+# "yes_destroy_partions_and_data"
+# "no"
+
+zap: no
+
+
+# fs_type deifnes filesystem to use to format DISK
+# values:
+# "xfs"
+# "btrfs"
+fs_type: xfs
+
+#TODO: add some jourunal options

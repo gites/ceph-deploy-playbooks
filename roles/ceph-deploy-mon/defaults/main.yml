@@ -1,0 +1,21 @@
+---
+# defaults file for ceph-deploy-mon
+
+# ceph_cluster_dir define directory on your ceph-mon[0] node for maintaining
+# the configuration files and keys that ceph-deploy generates for your cluster.
+ceph_cluster_dir: /root/ceph_cluster
+
+# global_options define list of key value pairs that need to be added to ceph.conf
+# befor installing ceph monitors on cluster nodes
+global_options:
+  - name: osd_pool_default_size
+    value: "{% if groups['ceph-osd']|length <= 1 %}1{% elif groups['ceph-osd']|length == 2 %}2{% else %}3{% endif %}"
+  - name: osd_pool_default_min_size
+    value: "1"
+#  - name: public_network
+#    value: "1.1.1.1/24"
+#  - name: cluster_network
+#    value: "2.2.2.2/24"
+
+
+ceph_release: kraken

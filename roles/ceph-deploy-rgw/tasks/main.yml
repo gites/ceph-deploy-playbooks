@@ -1,0 +1,19 @@
+---
+# tasks file for ceph-deploy-rgw
+
+
+- name: install radosgw
+  apt:
+    name: radosgw
+    state: present
+
+- name:
+  set_fact:
+    ceph_cmd_head: "ceph-deploy --username={{ hostvars[inventory_hostname].ansible_ssh_user|default(lookup('env','USER')) }}"
+    ceph_rgws: "{% for rgw in groups['ceph-rgw'] %}{{ rgw }} {%endfor%}"
+
+- name: create ceph osds
+  shell: "{{ ceph_cmd_head }} rgw create {{ ceph_rgws }}" 
+  args:
+    chdir: "{{ ceph_cluster_dir }}"
+  when: inventory_hostname == groups['ceph-mon'][0]

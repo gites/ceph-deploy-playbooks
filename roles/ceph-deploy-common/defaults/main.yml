@@ -1,0 +1,27 @@
+---
+# defaults file for ceph-deploy-common
+
+http_proxy: ""
+https_proxy: ""
+
+# ceph_repo definse source of ceph packages
+#  values:
+#  "ceph" - use upstream repo from  https://download.ceph.com
+#  "distro" - use Ceph from your distro repo (TODO)
+ceph_repo: ceph
+
+# ceph_release
+#  values:
+#  "giant"
+#  "hammer"
+#  "infernalis"
+#  "jewel"
+#  "kraken"
+#  "luminous"
+ceph_release: kraken
+
+
+# ceph_cluster_dir define directory on your ceph-mon[0] node for maintaining
+# the configuration files and keys that ceph-deploy generates for your cluster.
+ceph_cluster_dir: /root/ceph_cluster
+

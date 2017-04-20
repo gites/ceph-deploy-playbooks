@@ -1,0 +1,42 @@
+---
+# tasks file for ceph-deploy-osd
+
+- name: install ceph-osd
+  apt:
+    name: ceph-osd
+    state: present
+
+- name: 
+  set_fact:
+    ceph_cmd_head: "ceph-deploy --username={{ hostvars[inventory_hostname].ansible_ssh_user|default(lookup('env','USER')) }}"
+    osd_fs: "--fs-type {{ fs_type }}"
+
+- name:
+  set_fact:
+    osd_zap: "--zap-disk"
+  when: zap == "yes_destroy_partions_and_data"
+
+- block:
+    - name: create ceph osds
+      shell: "{{ ceph_cmd_head }} osd prepare {{ osd_zap|default() }} {{ osd_fs }} {{ item.0 }}:{{ item.1 }}"
+      args:
+        chdir: "{{ ceph_cluster_dir }}"
+        creates: "{{ ceph_cluster_dir }}/osd.{{ item.0 }}.{{ item.1}}.created"
+      with_nested:
+        - "{{ groups['ceph-osd'] }}"
+        - "{{ osd_drives }}"
+      delegate_to: "{{ groups['ceph-mon'][0] }}"
+
+    - debug:
+        msg: "move to proper solution with register"
+
+    - name: create osd.{{ item.0 }}.{{ item.1}}.created file
+      file:
+        path: "{{ ceph_cluster_dir }}/osd.{{ item.0 }}.{{ item.1}}.created"
+        state: touch
+      with_nested:
+        - "{{ groups['ceph-osd'] }}"
+        - "{{ osd_drives }}"
+      delegate_to: "{{ groups['ceph-mon'][0] }}"
+
+  when: inventory_hostname == groups['ceph-mon'][0]

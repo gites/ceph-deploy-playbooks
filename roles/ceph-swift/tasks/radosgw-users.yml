@@ -1,0 +1,45 @@
+---
+
+- name: create radosgw user
+  shell: "radosgw-admin user create --uid={{ swift_conf.user }} --display-name='{{ swift_conf.user }} user'"
+  args:
+    chdir: "{{ ceph_cluster_dir }}"
+    creates: "{{ ceph_cluster_dir }}/swift-user-{{ swift_conf.user }}.ini"
+  register: radosgw_user
+
+- name: create radosgw swift subuser
+  shell: "radosgw-admin subuser create --uid={{ swift_conf.user }} --subuser={{ swift_conf.user }}:swift --access={{ swift_conf.access }}"
+  args:
+    chdir: "{{ ceph_cluster_dir }}"
+    creates: "{{ ceph_cluster_dir }}/swift-user-{{ swift_conf.user }}.ini"
+  register: radosgw_subuser
+
+- name: convert radosgw_subuser.stdout to json
+  set_fact:
+    rgw_keys: "{{ (radosgw_subuser.stdout|from_json)['keys'][0] }}"
+    rgw_swift_keys: "{{ (radosgw_subuser.stdout|from_json)['swift_keys'][0] }}"
+  when: radosgw_subuser.changed
+
+- name: create swift-user-{{ swift_conf.user }}.ini file
+  ini_file:
+    path: "{{ ceph_cluster_dir }}/swift-user-{{ swift_conf.user }}.ini"
+    section: keys
+    option: "{{ item.key }}" 
+    value: "{{ item.value }}"
+  with_dict: "{{ rgw_keys }}"
+  when: radosgw_subuser.changed
+
+- ini_file:
+    path: "{{ ceph_cluster_dir }}/swift-user-{{ swift_conf.user }}.ini"
+    section: swift_keys
+    option: "{{ item.key }}" 
+    value: "{{ item.value }}"
+  with_dict: "{{ rgw_swift_keys }}"
+  when: radosgw_subuser.changed
+
+- name: create swift container
+  shell: "swift -A http://{{ hostvars[groups['ceph-mon'][0]].ansible_ssh_host }}:7480/auth/1.0 -U {{ swift_conf.user }}:swift -K '{{ rgw_swift_keys['secret_key'] }}' upload {{ swift_conf.container }} /dev/null"
+  when: radosgw_subuser.changed
+  environment:
+    http_proxy: ""
+

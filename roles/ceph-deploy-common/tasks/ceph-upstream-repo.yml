@@ -1,0 +1,22 @@
+---
+
+- name: get ceph repo key
+  get_url:
+    url: https://download.ceph.com/keys/release.asc
+    dest: /tmp/ceph.key.asc
+  environment:
+    http_proxy: "{{ http_proxy|default('') }}"
+    https_proxy: "{{ https_proxy|default('') }}"
+
+- name: add ceph repo key to apt
+  apt_key:
+    file: /tmp/ceph.key.asc
+    state: present
+
+- name: add ceph repo to sources.list.d
+  lineinfile:
+    create: yes
+    state: present
+    path: /etc/apt/sources.list.d/ceph.list
+    line: >-
+      deb https://download.ceph.com/debian-{{ ceph_release }}/ {{ ansible_distribution_release }} main

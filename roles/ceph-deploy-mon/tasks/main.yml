@@ -1,0 +1,101 @@
+---
+# tasks file for ceph-deploy-mon
+
+- name: get ssh host key
+  shell: "ssh-keyscan -t ecdsa {{ item }}"
+  args:
+    creates: "{{ ceph_cluster_dir }}/ceph.conf"
+  register: hosts_keys
+  when: inventory_hostname == groups['ceph-mon'][0]
+  with_items: "{{ groups['ceph-mon'] }}"
+
+- name: check if know_hosts file exists
+  stat:
+    path: "{{ lookup('env', 'HOME') }}/.ssh/known_hosts"
+  when: inventory_hostname == groups['ceph-mon'][0]
+  register: known_hosts
+
+- name: create know_hosts file if needed
+  file:
+    path: "{{ lookup('env', 'HOME') }}/.ssh/known_hosts"
+    state: touch
+  when:
+    - inventory_hostname == groups['ceph-mon'][0]
+    - not known_hosts.stat.exists
+
+- name: add host keys to know_hosts file
+  lineinfile:
+    path: "{{ lookup('env', 'HOME') }}/.ssh/known_hosts"
+    line: "{{ item.stdout }}"
+  when: inventory_hostname == groups['ceph-mon'][0]
+  with_items: "{{ hosts_keys.results }}"
+
+- set_fact:
+    ceph_cmd_head: "ceph-deploy --username={{ hostvars[inventory_hostname].ansible_ssh_user|default(lookup('env','USER')) }}"
+    ceph_mons: "{% for mon in groups['ceph-mon'] %}{{ mon }} {%endfor%}"
+  when: inventory_hostname == groups['ceph-mon'][0]
+
+- name: create inital ceph cluster
+  shell: "{{ ceph_cmd_head }} new {{ ceph_mons }}"
+  args:
+    chdir: "{{ ceph_cluster_dir }}"
+    creates: "{{ ceph_cluster_dir }}/ceph.conf"
+  register: ceph_init
+  when: inventory_hostname == groups['ceph-mon'][0]
+
+- name:
+  ini_file:
+    path: "{{ ceph_cluster_dir }}/ceph.conf"
+    state: present
+    section: global
+    option: "{{ item.name }}" 
+    value: "{{ item.value }}"
+  with_items: "{{ global_options }}"
+  when:
+    - groups['ceph-osd']|length|int < 3|int
+    - inventory_hostname == groups['ceph-mon'][0]
+
+#- name: install ceph cluster
+#  shell: "{{ ceph_cmd_head }} install --release {{ ceph_release }} --no-adjust-repos {{ ceph_mons }}"
+#  args:
+#    chdir: "{{ ceph_cluster_dir }}"
+#    creates: "{{ ceph_cluster_dir }}/ceph.installed"
+#  register: ceph_install
+#  when: inventory_hostname == groups['ceph-mon'][0]
+
+- name: install ceph-mon
+  apt:
+    name: ceph-mon
+    state: present
+
+- name: inicialize ceph monitors and gather the keys
+  shell: "{{ ceph_cmd_head }} mon create-initial"
+  args:
+    chdir: "{{ ceph_cluster_dir }}"
+    creates: "{{ ceph_cluster_dir }}/ceph.client.admin.keyring"
+  register: ceph_install
+  when: inventory_hostname == groups['ceph-mon'][0]
+
+- name: get ceph keys
+  slurp:
+    src: "{{ ceph_cluster_dir }}/{{ item }}"
+  with_items:
+    - "ceph.client.admin.keyring"
+  register: ceph_keys_base64_mon0
+  when: inventory_hostname == groups['ceph-mon'][0]
+
+- set_fact:
+    ceph_keys_base64: "{{ hostvars[groups['ceph-mon'][0]].ceph_keys_base64_mon0 }}"
+#  when: inventory_hostname == groups['ceph-mon'][0]
+
+#- debug: var=ceph_keys_base64
+#- fail:
+- name: distribute ceph keys
+  copy:
+    dest: "/etc/ceph/{{ item.item }}"
+    content: "{{ item.content | b64decode }}"
+    mode: 0640
+    owner: root
+    group: root
+  with_flattened:
+    - "{{ ceph_keys_base64.results }}"

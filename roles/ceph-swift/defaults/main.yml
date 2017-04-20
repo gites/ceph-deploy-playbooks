@@ -1,0 +1,13 @@
+---
+# defaults file for ceph-swift
+
+
+# ceph_cluster_dir define directory on your ceph-mon[0] node for maintaining
+# the configuration files and keys that ceph-deploy generates for your cluster.
+ceph_cluster_dir: /root/ceph_cluster
+
+
+swift_store:
+  - container: test
+    user: test
+    access: full

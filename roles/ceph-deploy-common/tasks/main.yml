@@ -1,0 +1,25 @@
+---
+# tasks file for ceph-deploy-common
+
+
+- include: ceph-upstream-repo.yml
+  when: ceph_repo == 'ceph'
+
+- debug:
+    msg: "Ceph from distro repo is not supported yet"
+  when: ceph_repo == 'distro'
+
+- name: install ceph-deploy
+  apt:
+    name: ceph-deploy
+    state: present
+    update_cache: yes
+
+- name: create {{ ceph_cluster_dir }}
+  file:
+    path: "{{ ceph_cluster_dir }}"
+    state: directory
+  when: inventory_hostname == groups['ceph-mon'][0]
+
+#TODO: add ntp setup
+#- include: ntp.yml
