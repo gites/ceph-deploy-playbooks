@@ -23,3 +23,25 @@
 
 #TODO: add ntp setup
 #- include: ntp.yml
+
+- block:
+    - name: add rbd devices to be classified as network storage
+      lineinfile:
+        path: /etc/init/networking.conf
+        line: '\1/dev/rbd*|\2'
+        regexp: '(^\W+)(/dev/nbd\*\|/dev/nd\[a-z\]\*\|/dev/etherd/e\*\))'
+        backrefs: yes
+        backup: yes
+      with_items:
+        - 0
+        - 1
+
+    - name: disable ifaces shutdown on os shutdown
+      lineinfile:
+        path: /etc/init/networking.conf
+        line: '#\1'
+        regexp: '(^\W+ifdown -a --exclude=lo)'
+        backrefs: yes
+        backup: yes
+
+  when: "{{ colocate_k8s }}"

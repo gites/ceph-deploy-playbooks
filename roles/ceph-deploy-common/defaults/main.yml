@@ -25,3 +25,9 @@ ceph_release: kraken
 # the configuration files and keys that ceph-deploy generates for your cluster.
 ceph_cluster_dir: /root/ceph_cluster
 
+# colocate_k8s
+# values:
+# "True"
+# "False"
+colocate_k8s: True
+#
