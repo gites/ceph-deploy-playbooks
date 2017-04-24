@@ -37,6 +37,13 @@
   with_dict: "{{ rgw_swift_keys }}"
   when: radosgw_subuser.changed
 
+- ini_file:
+    path: "{{ ceph_cluster_dir }}/swift-user-{{ swift_conf.user }}.ini"
+    section: swift_keys
+    option: "container"
+    value: "{{ swift_conf.container }}"
+  when: radosgw_subuser.changed
+
 - name: create swift container
   shell: "swift -A http://{{ hostvars[groups['ceph-mon'][0]].ansible_ssh_host }}:7480/auth/1.0 -U {{ swift_conf.user }}:swift -K '{{ rgw_swift_keys['secret_key'] }}' upload {{ swift_conf.container }} /dev/null"
   when: radosgw_subuser.changed
