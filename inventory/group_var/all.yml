@@ -1,0 +1,83 @@
+---
+# defaults file for ceph-deploy-common
+
+http_proxy: ""
+https_proxy: ""
+
+# ceph_repo definse source of ceph packages
+#  values:
+#  "ceph" - use upstream repo from  https://download.ceph.com
+#  "distro" - use Ceph from your distro repo (TODO)
+ceph_repo: ceph
+
+# ceph_release
+#  values:
+#  "giant"
+#  "hammer"
+#  "infernalis"
+#  "jewel"
+#  "kraken"
+#  "luminous"
+ceph_release: kraken
+
+
+# ceph_cluster_dir define directory on your ceph-mon[0] node for maintaining
+# the configuration files and keys that ceph-deploy generates for your cluster.
+ceph_cluster_dir: /root/ceph_cluster
+
+# colocate_k8s
+# values:
+# "True"
+# "False"
+colocate_k8s: True
+#
+
+# defaults file for ceph-deploy-mon
+
+# global_options define list of key value pairs that need to be added to ceph.conf
+# befor installing ceph monitors on cluster nodes
+global_options:
+  - name: osd_pool_default_size
+    value: "{% if groups['ceph-osd']|length <= 1 %}1{% elif groups['ceph-osd']|length == 2 %}2{% else %}3{% endif %}"
+  - name: osd_pool_default_min_size
+    value: "1"
+#  - name: public_network
+#    value: "1.1.1.1/24"
+#  - name: cluster_network
+#    value: "2.2.2.2/24"
+
+
+# defaults file for ceph-deploy-osd
+
+# osd_drives defines drives that will be used for OSD
+# if have diferent deveices on diferent osd hosts 
+# use host vars to override
+osd_drives:
+  - vdb
+  - vdc
+
+# zap - shoudl ceph-deploy destroy existing partition table and content for DISK
+# ansible will fail if there are signis of data on disks from osd_drives list
+# values:
+# "yes_destroy_partions_and_data"
+# "no"
+
+zap: no
+
+
+# fs_type deifnes filesystem to use to format DISK
+# values:
+# "xfs"
+# "btrfs"
+fs_type: xfs
+
+#TODO: add some jourunal options
+
+
+# defaults file for ceph-swift
+
+
+swift_store:
+  - container: docker-registry
+    user: docker-registry
+    access: full
